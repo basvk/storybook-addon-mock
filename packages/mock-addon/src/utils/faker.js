@@ -170,21 +170,16 @@ export class Faker {
         const matched = this.matchMock(url, method);
         if (matched) {
             const { response, status, delay = 0 } = matched;
-            setTimeout(() => {
+            setTimeout(async () => {
+                let mockResponse;
+
                 if (typeof response === 'function') {
-                    const data = response(new Request(url, { method, body }));
-                    request.respond(
-                        +status,
-                        defaultResponseHeaders,
-                        JSON.stringify(data)
-                    );
+                    mockResponse = CustomResponse(url, status, response(new Request(url, { method, body })))
                 } else {
-                    request.respond(
-                        +status,
-                        defaultResponseHeaders,
-                        JSON.stringify(response)
-                    );
+                    mockResponse = CustomResponse(url, status, response)
                 }
+
+                request.respond(+status, response.headers, await mockResponse.text())
             }, +delay);
         } else {
             const RealXMLHTTPRequest = global.realXMLHttpRequest;
